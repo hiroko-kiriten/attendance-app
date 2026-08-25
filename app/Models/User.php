@@ -42,5 +42,17 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'admin_status' => 'boolean',
     ];
+
+    public function attendanceRecords()
+{
+    return $this->hasMany(AttendanceRecord::class);
+}
+
+    public function attendanceCorrectionRequests()
+{
+    return $this->hasMany(AttendanceCorrectionRequest::class);
+}
+
 }
