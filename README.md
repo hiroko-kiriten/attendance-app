@@ -90,21 +90,4 @@ erDiagram
     }
 
 
-## ダミーデータ
-
-ダミーデータの生成にはLaravelのSeederおよびFactoryを使用しています。
-
-### Seeder
-
-`database/seeders/` に各テーブルの初期データを作成するSeederを配置しています。
-
-### Factory
-
-`database/factories/` にダミーデータを生成するFactoryを配置しています。
-
-### ダミーデータの生成
-
-以下のコマンドでデータベースを初期化し、Seederを実行できます。
-
-```bash
-./vendor/bin/sail artisan migrate:fresh --seed
+    
