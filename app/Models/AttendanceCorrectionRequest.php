@@ -16,6 +16,11 @@ class AttendanceCorrectionRequest extends Model
     'new_clock_out',
     'comment',
     'new_date',
+    'approval_status',
+];
+    
+    protected $casts = [
+    'new_date' => 'date',
 ];
 
     public function user()

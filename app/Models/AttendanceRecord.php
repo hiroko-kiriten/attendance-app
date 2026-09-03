@@ -26,6 +26,6 @@ class AttendanceRecord extends Model
 
     public function breaks()
     {
-        return $this->hasMany(Break::class);
+        return $this->hasMany(BreakRecord::class);
     }
 }
