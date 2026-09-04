@@ -7,6 +7,7 @@ use App\Http\Requests\AttendanceCorrectionRequest;
 use App\Models\AttendanceCorrectionRequest as AttendanceCorrectionRequestModel;
 use App\Models\AttendanceRecord;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 
 class AttendanceController extends Controller
 {
@@ -20,56 +21,144 @@ class AttendanceController extends Controller
         ->first();
 
     if ($request->action === 'clock_in') {
-        AttendanceRecord::create([
+         if (!$attendanceRecord) {    
+            AttendanceRecord::create([
             'user_id' => $user->id,
             'date' => now()->toDateString(),
             'clock_in' => now(),
         ]);
 
-        $user->attendance_status = '出勤中';
-        $user->save();
+        }
     }
 
-      if ($request->action === 'clock_out') {
+if ($request->action === 'clock_out') {
+    if (
+        $attendanceRecord &&
+        $attendanceRecord->clock_in &&
+        !$attendanceRecord->clock_out &&
+        !$attendanceRecord->breaks()
+            ->whereNull('break_out')
+            ->exists()
+    ) {
+        $clockOut = now();
+        $clockIn = Carbon::parse($attendanceRecord->clock_in);
+
+        // 出勤から退勤までの経過時間
+        $workSeconds = $clockIn->diffInSeconds($clockOut);
+
+        // 合計休憩時間
+        $totalBreakSeconds = 0;
+
+        if ($attendanceRecord->total_break_time) {
+            [$hours, $minutes, $seconds] = array_map(
+                'intval',
+                explode(':', $attendanceRecord->total_break_time)
+            );
+
+            $totalBreakSeconds =
+                ($hours * 3600) +
+                ($minutes * 60) +
+                $seconds;
+        }
+
+        // 実働時間 ＝ 経過時間 − 休憩時間
+        $totalTimeSeconds = $workSeconds - $totalBreakSeconds;
+
+        $hours = floor($totalTimeSeconds / 3600);
+        $minutes = floor(($totalTimeSeconds % 3600) / 60);
+        $seconds = $totalTimeSeconds % 60;
+
         $attendanceRecord->update([
-            'clock_out' => now(),
+            'clock_out' => $clockOut,
+            'total_time' => sprintf(
+                '%02d:%02d:%02d',
+                $hours,
+                $minutes,
+                $seconds
+            ),
         ]);
-
-        $user->attendance_status = '退勤済';
-        $user->save();
     }
+}
 
     if ($request->action === 'break_in') {
+         if (
+        $attendanceRecord &&
+        !$attendanceRecord->clock_out &&
+        !$attendanceRecord->breaks()
+            ->whereNull('break_out')
+            ->exists()
+    ) {
         $attendanceRecord->breaks()->create([
             'break_in' => now(),
         ]);
-
-        $user->attendance_status = '休憩中';
-        $user->save();
     }
+    }    
 
-    if ($request->action === 'break_out') {
+   if ($request->action === 'break_out') {
+    if ($attendanceRecord && !$attendanceRecord->clock_out) {
         $break = $attendanceRecord->breaks()
             ->whereNull('break_out')
             ->latest()
             ->first();
 
         if ($break) {
-            $break->update([
-                'break_out' => now(),
-            ]);
-        }
+    $break->update([
+        'break_out' => now(),
+    ]);
 
-        $user->attendance_status = '出勤中';
-        $user->save();
+    $totalBreakSeconds = 0;
+
+    foreach ($attendanceRecord->breaks()->get() as $breakRecord) {
+        if ($breakRecord->break_in && $breakRecord->break_out) {
+            $breakIn = Carbon::parse($breakRecord->break_in);
+            $breakOut = Carbon::parse($breakRecord->break_out);
+
+            $totalBreakSeconds += $breakIn->diffInSeconds($breakOut);
+        }
     }
 
+    $hours = floor($totalBreakSeconds / 3600);
+    $minutes = floor(($totalBreakSeconds % 3600) / 60);
+    $seconds = $totalBreakSeconds % 60;
+
+    $attendanceRecord->update([
+        'total_break_time' => sprintf(
+            '%02d:%02d:%02d',
+            $hours,
+            $minutes,
+            $seconds
+        ),
+    ]);
+}
+    }
+}
     return redirect('/attendance/list');
 }
 
     public function register()
 {
     $user = auth()->user();
+
+     $attendanceRecord = AttendanceRecord::where('user_id', $user->id)
+        ->whereDate('date', now()->toDateString())
+        ->with('breaks')
+        ->first();
+
+    if (!$attendanceRecord) {
+        $attendanceStatus = '勤務外';
+    } elseif ($attendanceRecord->clock_out) {
+        $attendanceStatus = '退勤済';
+    } elseif ($attendanceRecord->breaks->contains(function ($break) {
+        return $break->break_in && !$break->break_out;
+    })) {
+        $attendanceStatus = '休憩中';
+    } else {
+        $attendanceStatus = '出勤中';
+    }
+
+    // 完成品のBladeが $user->attendance_status を使うため、
+    // 画面表示用に一時的に値を設定する
+    $user->attendance_status = $attendanceStatus;
 
     return view('user.attendance-register', [
         'user' => $user,
