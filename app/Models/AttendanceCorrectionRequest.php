@@ -17,6 +17,7 @@ class AttendanceCorrectionRequest extends Model
     'comment',
     'new_date',
     'approval_status',
+    'application_date',
 ];
     
     protected $casts = [

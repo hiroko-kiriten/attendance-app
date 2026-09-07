@@ -4,66 +4,64 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreAttendanceRequest;
 use App\Http\Requests\AttendanceCorrectionRequest;
-use App\Models\AttendanceCorrectionRequest as AttendanceCorrectionRequestModel;
+use App\Models\AttendanceCorrectionRequest as AttendanceCorrectionRequestModel;//FormRequestと同じ名前になるのを避けるため
 use App\Models\AttendanceRecord;
-use Carbon\Carbon;
-use Illuminate\Http\Request;
+use Carbon\Carbon;//日付・時刻を扱うためのクラス
+use Illuminate\Http\Request;//HTTPリクエストを受け取るためのlaravelのクラス
 
 class AttendanceController extends Controller
 {
 
     public function store(StoreAttendanceRequest $request)
 {
-    $user = auth()->user();
+    $user = auth()->user();//現在ログインしているユーザーの情報を取得して $user に代入
 
-     $attendanceRecord = AttendanceRecord::where('user_id', $user->id)
-        ->whereDate('date', now()->toDateString())
-        ->first();
+    $attendanceRecord = AttendanceRecord::where('user_id', $user->id)//ログインユーザーのIDと一致する勤怠記録を検索
+        ->whereDate('date', now()->toDateString())//勤怠記録の日付が今日の日付と一致するものに絞り込む
+        ->first();//検索結果の最初の1件を取得
 
-    if ($request->action === 'clock_in') {
-         if (!$attendanceRecord) {    
-            AttendanceRecord::create([
-            'user_id' => $user->id,
-            'date' => now()->toDateString(),
-            'clock_in' => now(),
+    if ($request->action === 'clock_in') {//送信された操作が「出勤（clock_in）」だった場合に処理を実行する
+         if (!$attendanceRecord) {  //勤怠記録がまだ存在しない場合に処理を実行する  
+            AttendanceRecord::create([//勤怠記録をデータベースに新しく登録
+            'user_id' => $user->id,//勤怠記録にログインユーザーのIDを設定
+            'date' => now()->toDateString(),//勤怠記録の日付に今日の日付を設定
+            'clock_in' => now(),//勤怠記録に今の時間を設定
         ]);
 
         }
     }
 
-if ($request->action === 'clock_out') {
+if ($request->action === 'clock_out') {//送信された操作が「退勤（clock_out）」だった場合に処理を実行
     if (
         $attendanceRecord &&
         $attendanceRecord->clock_in &&
         !$attendanceRecord->clock_out &&
-        !$attendanceRecord->breaks()
-            ->whereNull('break_out')
-            ->exists()
-    ) {
+        !$attendanceRecord->breaks()//休憩記録を取得
+            ->whereNull('break_out')//休憩終了記録が未入力
+            ->exists()//そのような記録が存在するか確認
+    ) {//勤怠記録が存在し、出勤済みで、退勤前で、休憩中ではない場合に処理を実行
         $clockOut = now();
         $clockIn = Carbon::parse($attendanceRecord->clock_in);
 
         // 出勤から退勤までの経過時間
         $workSeconds = $clockIn->diffInSeconds($clockOut);
 
-        // 合計休憩時間
+        // 合計休憩時間を秒に変換
         $totalBreakSeconds = 0;
 
-        if ($attendanceRecord->total_break_time) {
-            [$hours, $minutes, $seconds] = array_map(
-                'intval',
-                explode(':', $attendanceRecord->total_break_time)
-            );
+        foreach ($attendanceRecord->breaks()->get() as $breakRecord) {
+            if ($breakRecord->break_in && $breakRecord->break_out) {
+                $breakIn = Carbon::parse($breakRecord->break_in);
+                $breakOut = Carbon::parse($breakRecord->break_out);
 
-            $totalBreakSeconds =
-                ($hours * 3600) +
-                ($minutes * 60) +
-                $seconds;
+                $totalBreakSeconds += $breakIn->diffInSeconds($breakOut);
+            }
         }
 
-        // 実働時間 ＝ 経過時間 − 休憩時間
+        // 実働時間 = 出勤から退勤までの時間 - 休憩時間
         $totalTimeSeconds = $workSeconds - $totalBreakSeconds;
 
+        // 秒 → 時・分・秒に変換
         $hours = floor($totalTimeSeconds / 3600);
         $minutes = floor(($totalTimeSeconds % 3600) / 60);
         $seconds = $totalTimeSeconds % 60;
@@ -108,17 +106,17 @@ if ($request->action === 'clock_out') {
 
     $totalBreakSeconds = 0;
 
-    foreach ($attendanceRecord->breaks()->get() as $breakRecord) {
-        if ($breakRecord->break_in && $breakRecord->break_out) {
+    foreach ($attendanceRecord->breaks()->get() as $breakRecord) {//その勤怠に紐づく休憩記録を1件ずつ取り出して、$breakRecord に入れながら繰り返し処理
+        if ($breakRecord->break_in && $breakRecord->break_out) {//休憩開始時間と休憩終了時間の両方が登録されている場合に処理を実行
             $breakIn = Carbon::parse($breakRecord->break_in);
             $breakOut = Carbon::parse($breakRecord->break_out);
 
-            $totalBreakSeconds += $breakIn->diffInSeconds($breakOut);
+            $totalBreakSeconds += $breakIn->diffInSeconds($breakOut);//その休憩の開始から終了までの秒数を計算し、これまでの合計休憩時間（秒）に加算
         }
     }
 
-    $hours = floor($totalBreakSeconds / 3600);
-    $minutes = floor(($totalBreakSeconds % 3600) / 60);
+    $hours = floor($totalBreakSeconds / 3600);//合計休憩秒数を3600（1時間＝3600秒）で割り、整数部分だけを取り出して「時間」に変換
+    $minutes = floor(($totalBreakSeconds % 3600) / 60);//floor（床） から来ていて、小数点以下を切り捨てて、下の整数にする関数
     $seconds = $totalBreakSeconds % 60;
 
     $attendanceRecord->update([
@@ -148,7 +146,7 @@ if ($request->action === 'clock_out') {
         $attendanceStatus = '勤務外';
     } elseif ($attendanceRecord->clock_out) {
         $attendanceStatus = '退勤済';
-    } elseif ($attendanceRecord->breaks->contains(function ($break) {
+    } elseif ($attendanceRecord->breaks->contains(function ($break) {//休憩記録の中に、条件（休憩中）に当てはまるものが1件でもあるかを確認
         return $break->break_in && !$break->break_out;
     })) {
         $attendanceStatus = '休憩中';
@@ -178,6 +176,7 @@ if ($request->action === 'clock_out') {
         $attendanceRecords = AttendanceRecord::where('user_id', auth()->id())
             ->whereYear('date', $date->year)
             ->whereMonth('date', $date->month)
+            ->orderBy('date', 'desc')           
             ->get();
 
         // 前月・翌月
@@ -200,7 +199,7 @@ if ($request->action === 'clock_out') {
             ];
         });
 
-        return view('user.user-attendance-list', compact(
+        return view('user.user-attendance-list', compact(//compact() は、指定した変数をまとめて配列にして、Blade（View）へ渡すためのPHP関数
             'date',
             'previousMonth',
             'nextMonth',
@@ -211,7 +210,8 @@ if ($request->action === 'clock_out') {
     public function show($id)
 {
     $attendanceRecord = AttendanceRecord::with('breaks')
-        ->findOrFail($id);
+        ->where('user_id', auth()->id())
+        ->findOrFail($id);//指定したIDのデータを取得し、見つからなければ404エラーを発生させる
 
     $user = $attendanceRecord->user;
 
@@ -256,7 +256,8 @@ if ($request->action === 'clock_out') {
 
     public function update(AttendanceCorrectionRequest $request, $id)
     {
-        $attendanceRecord = AttendanceRecord::findOrFail($id);
+        $attendanceRecord = AttendanceRecord::where('user_id', auth()->id())
+    ->findOrFail($id);
 
         $application = AttendanceCorrectionRequestModel::create([
             'attendance_record_id' => $attendanceRecord->id,
@@ -275,7 +276,7 @@ if ($request->action === 'clock_out') {
         foreach ($breakIns as $index => $breakIn) {
             $breakOut = $breakOuts[$index] ?? null;
 
-            // 両方空欄なら登録しない
+            // 両方空欄なら登録しないで次の処理に進む
             if (empty($breakIn) && empty($breakOut)) {
                 continue;
             }
@@ -285,7 +286,6 @@ if ($request->action === 'clock_out') {
                 'break_out' => $breakOut,
             ]);
         }
-
         return redirect('/attendance/list');
     }
 }
