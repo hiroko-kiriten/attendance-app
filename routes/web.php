@@ -43,6 +43,11 @@ Route::middleware(['auth', 'admin'])->group(function () {
     );
 
     Route::get(
+    '/admin/stamp_correction_request/list',
+    [AdminApplicationController::class, 'index']
+);
+
+    Route::get(
         '/admin/attendance/{id}',
         [AdminAttendanceController::class, 'show']
     )->name('admin.attendance.detail');

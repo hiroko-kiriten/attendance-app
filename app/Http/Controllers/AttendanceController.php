@@ -84,7 +84,7 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
         !$attendanceRecord->clock_out &&
         !$attendanceRecord->breaks()
             ->whereNull('break_out')
-            ->exists()
+            ->exists()//出勤済み・退勤していない・現在休憩中ではない場合に休憩開始できる
     ) {
         $attendanceRecord->breaks()->create([
             'break_in' => now(),
@@ -97,7 +97,7 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
         $break = $attendanceRecord->breaks()
             ->whereNull('break_out')
             ->latest()
-            ->first();
+            ->first();//終了していない休憩を探して終了時刻を入れる処理
 
         if ($break) {
     $break->update([
