@@ -15,13 +15,18 @@ use Carbon\Carbon;
 // HTTPリクエストを受け取るRequestを読み込む
 use Illuminate\Http\Request;
 
+// Viewを返すために読み込む
+use Illuminate\View\View;
+
 // 管理者側のスタッフ関連処理をまとめるController
 class AdminStaffController extends Controller
 {
     /**
-     * スタッフ一覧画面
+     * 一般ユーザーのスタッフ一覧画面を表示する
+     *
+     * @return View
      */
-    public function index()
+    public function index(): View
     {
         // 管理者ではない一般ユーザーだけを取得する
         $users = User::where('admin_status', false)->get();
@@ -31,9 +36,13 @@ class AdminStaffController extends Controller
     }
 
     /**
-     * スタッフ別勤怠一覧画面
+     * 指定したスタッフの月別勤怠一覧画面を表示する
+     *
+     * @param Request $request
+     * @param int $id
+     * @return View
      */
-    public function show(Request $request, $id)
+    public function show(Request $request, int $id): View
     {
         // 指定されたIDの一般ユーザーを取得する
         // admin_statusがfalseなので管理者は対象外

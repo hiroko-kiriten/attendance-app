@@ -12,8 +12,7 @@
     font-size: 28px;
 }
 
-.form,
-.login__link {
+.form, .login__link {
     margin: 0 auto;
     max-width: 100vh;
 }
@@ -41,7 +40,6 @@
     margin: 30px auto;
     text-align: center;
 }
-
 .form__button--submit {
     background: #000;
     border: none;

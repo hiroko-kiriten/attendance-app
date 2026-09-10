@@ -9,8 +9,7 @@
         <div class="detail__header">
             <h1 class="content__header--item">勤怠詳細</h1>
         </div>
-        {{-- 勤怠IDをURLに含めて、修正内容をPOST送信する --}}
-        <form class="form" action="{{ url('/admin/attendance/' . $attendanceRecord['id']) }}" method="post">
+        <form class="form" action="{{ url('/attendance/' . $attendanceRecord['id']) }}" method="post">
             @csrf
                 <div class="form__content">
                     <div class="form__group">

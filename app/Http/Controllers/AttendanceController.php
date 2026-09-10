@@ -8,11 +8,19 @@ use App\Models\AttendanceCorrectionRequest as AttendanceCorrectionRequestModel;/
 use App\Models\AttendanceRecord;
 use Carbon\Carbon;//日付・時刻を扱うためのクラス
 use Illuminate\Http\Request;//HTTPリクエストを受け取るためのlaravelのクラス
+use Illuminate\Http\RedirectResponse;
+use Illuminate\View\View;
 
 class AttendanceController extends Controller
 {
 
-    public function store(StoreAttendanceRequest $request)
+/**
+ * 勤怠登録・出退勤・休憩の処理を行う
+ *
+ * @param StoreAttendanceRequest $request
+ * @return RedirectResponse
+ */
+    public function store(StoreAttendanceRequest $request): RedirectResponse
 {
     $user = auth()->user();//現在ログインしているユーザーの情報を取得して $user に代入
 
@@ -46,33 +54,38 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
         // 出勤から退勤までの経過時間
         $workSeconds = $clockIn->diffInSeconds($clockOut);
 
-        // 合計休憩時間を秒に変換
-        $totalBreakSeconds = 0;
+        // 完了した休憩だけを対象に、合計休憩時間を秒数で計算
+    $totalBreakSeconds = $attendanceRecord->breaks
+        ->filter(function ($breakRecord) {
+            // 休憩開始・終了の両方が登録されている休憩だけ残す
+            return $breakRecord->break_in && $breakRecord->break_out;
+        })
+        ->sum(function ($breakRecord) {
+            // 休憩開始時刻をCarbonに変換
+            $breakIn = Carbon::parse($breakRecord->break_in);
 
-        foreach ($attendanceRecord->breaks()->get() as $breakRecord) {
-            if ($breakRecord->break_in && $breakRecord->break_out) {
-                $breakIn = Carbon::parse($breakRecord->break_in);
-                $breakOut = Carbon::parse($breakRecord->break_out);
+            // 休憩終了時刻をCarbonに変換
+            $breakOut = Carbon::parse($breakRecord->break_out);
 
-                $totalBreakSeconds += $breakIn->diffInSeconds($breakOut);
-            }
-        }
+            // この休憩の秒数を返す
+            return $breakIn->diffInSeconds($breakOut);
+        });
 
-        // 実働時間 = 出勤から退勤までの時間 - 休憩時間
-        $totalTimeSeconds = $workSeconds - $totalBreakSeconds;
+            // 実働時間 = 出勤から退勤までの時間 - 休憩時間
+            $totalTimeSeconds = $workSeconds - $totalBreakSeconds;
 
-        // 秒 → 時・分・秒に変換
-        $hours = floor($totalTimeSeconds / 3600);
-        $minutes = floor(($totalTimeSeconds % 3600) / 60);
-        $seconds = $totalTimeSeconds % 60;
+            // 秒 → 時・分・秒に変換
+            $hours = floor($totalTimeSeconds / 3600);
+            $minutes = floor(($totalTimeSeconds % 3600) / 60);
+            $seconds = $totalTimeSeconds % 60;
 
-        $attendanceRecord->update([
-            'clock_out' => $clockOut,
-            'total_time' => sprintf(
-                '%02d:%02d:%02d',
-                $hours,
-                $minutes,
-                $seconds
+            $attendanceRecord->update([
+                'clock_out' => $clockOut,
+                'total_time' => sprintf(
+                    '%02d:%02d:%02d',
+                    $hours,
+                    $minutes,
+                    $seconds
             ),
         ]);
     }
@@ -104,16 +117,22 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
         'break_out' => now(),
     ]);
 
-    $totalBreakSeconds = 0;
+    // 完了した休憩だけを対象に、合計休憩時間を秒数で計算
+    $totalBreakSeconds = $attendanceRecord->breaks
+    ->filter(function ($breakRecord) {
+        // 休憩開始・終了の両方が登録されている休憩だけ残す
+        return $breakRecord->break_in && $breakRecord->break_out;
+    })
+    ->sum(function ($breakRecord) {
+        // 休憩開始時刻をCarbonに変換
+        $breakIn = Carbon::parse($breakRecord->break_in);
 
-    foreach ($attendanceRecord->breaks()->get() as $breakRecord) {//その勤怠に紐づく休憩記録を1件ずつ取り出して、$breakRecord に入れながら繰り返し処理
-        if ($breakRecord->break_in && $breakRecord->break_out) {//休憩開始時間と休憩終了時間の両方が登録されている場合に処理を実行
-            $breakIn = Carbon::parse($breakRecord->break_in);
-            $breakOut = Carbon::parse($breakRecord->break_out);
+        // 休憩終了時刻をCarbonに変換
+        $breakOut = Carbon::parse($breakRecord->break_out);
 
-            $totalBreakSeconds += $breakIn->diffInSeconds($breakOut);//その休憩の開始から終了までの秒数を計算し、これまでの合計休憩時間（秒）に加算
-        }
-    }
+        // この休憩の秒数を返す
+        return $breakIn->diffInSeconds($breakOut);
+    });
 
     $hours = floor($totalBreakSeconds / 3600);//合計休憩秒数を3600（1時間＝3600秒）で割り、整数部分だけを取り出して「時間」に変換
     $minutes = floor(($totalBreakSeconds % 3600) / 60);//floor（床） から来ていて、小数点以下を切り捨てて、下の整数にする関数
@@ -133,7 +152,12 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
     return redirect('/attendance/list');
 }
 
-    public function register()
+/**
+ * 勤怠登録画面を表示する
+ *
+ * @return View
+ */
+    public function register(): View
 {
     $user = auth()->user();
 
@@ -164,8 +188,13 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
         'formattedTime' => now()->format('H:i'),
     ]);
 }
-
-    public function index(Request $request)
+/**
+ * ログインユーザーの指定月の勤怠一覧を表示する
+ *
+ * @param Request $request
+ * @return View
+ */
+    public function index(Request $request): View
     {
         // 表示する年月を取得
         $date = $request->date
@@ -207,7 +236,13 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
         ));
     }
 
-    public function show($id)
+/**
+ * 指定した勤怠記録の詳細を表示する
+ *
+ * @param int $id
+ * @return View
+ */
+    public function show(int $id): View
 {
     $attendanceRecord = AttendanceRecord::with('breaks')
         ->where('user_id', auth()->id())
@@ -254,7 +289,14 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
         ));
 }
 
-    public function update(AttendanceCorrectionRequest $request, $id)
+/**
+ * 勤怠修正申請を登録する
+ *
+ * @param AttendanceCorrectionRequest $request
+ * @param int $id
+ * @return RedirectResponse
+ */
+    public function update(AttendanceCorrectionRequest $request, int $id): RedirectResponse
     {
         $attendanceRecord = AttendanceRecord::where('user_id', auth()->id())
     ->findOrFail($id);

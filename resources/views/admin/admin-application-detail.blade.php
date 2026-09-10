@@ -9,7 +9,7 @@
     <div class="detail__header">
         <h1 class="content__header--item">勤怠詳細</h1>
     </div>
-    <form class="applied-form" action="{{ url('/stamp_correction_request/approve/' . $application->id) }}" method="post">
+    <form class="applied-form" action="{{ url('/stamp_correction_request/approve/' . $application['id']) }}" method="post">
         @csrf
         <div class="applied-form__content">
             <div class="applied-form__group">
@@ -34,7 +34,7 @@
                 </div>
             </div>
             {{-- 休憩は「休憩」「休憩2」「休憩3」…とセクションを分けて表示 --}}
-            @foreach($application->attendanceCorrectionRequestBreaks as $index => $break)
+            @foreach($application->proposalBreaks as $index => $break)
                 <div class="applied-form__group">
                     <label class="applied-form__header">{{ $index === 0 ? '休憩' : '休憩' . ($index + 1) }}</label>
                     <div class="applied-form__input-group">
@@ -48,7 +48,7 @@
             @endforeach
             {{-- Figma に合わせ、末尾に空の休憩スロットを1つ表示 --}}
             <div class="applied-form__group">
-                <label class="applied-form__header">{{ $application->attendanceCorrectionRequestBreaks->count() === 0 ? '休憩' : '休憩' . ($application->attendanceCorrectionRequestBreaks->count() + 1) }}</label>
+                <label class="applied-form__header">{{ $application->proposalBreaks->count() === 0 ? '休憩' : '休憩' . ($application->proposalBreaks->count() + 1) }}</label>
                 <div class="applied-form__input-group">
                     <input class="applied-form__input readonly" type="text" value="" readonly>
                     <p>〜</p>

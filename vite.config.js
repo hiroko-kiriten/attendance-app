@@ -9,6 +9,7 @@ export default defineConfig({
                 'resources/js/app.js',
                 'resources/css/sanitize.css',
                 'resources/css/common.css',
+                'resources/css/reports/index.css',
                 'resources/css/admin/admin-application-list.css',
                 'resources/css/user/attendance-register.css',
                 'resources/css/user/user-attendance-list.css',
