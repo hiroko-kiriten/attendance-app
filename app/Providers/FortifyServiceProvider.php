@@ -53,7 +53,11 @@ class FortifyServiceProvider extends ServiceProvider
         return view('user.register');
     });
 
-        Fortify::createUsersUsing(CreateNewUser::class);
+        // メール認証案内画面を表示する
+        Fortify::verifyEmailView(function () {
+        return view('auth.verify-email');
+    });
+        Fortify::createUsersUsing(CreateNewUser::class);//CreateNewUser が会員登録を担当
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);

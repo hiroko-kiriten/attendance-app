@@ -14,12 +14,12 @@ Route::get('/', function () {
 });
 
 // 一般ユーザー
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'verified'])->group(function () {
 
-    Route::get('/attendance', [AttendanceController::class, 'register']);
-    Route::post('/attendance', [AttendanceController::class, 'store']);
+Route::get('/attendance', [AttendanceController::class, 'register']);
+Route::post('/attendance', [AttendanceController::class, 'store']);
 
-    Route::get('/attendance/list', [AttendanceController::class, 'index']);
+Route::get('/attendance/list', [AttendanceController::class, 'index']);
 
 Route::get('/attendance/detail/{id}', [AttendanceController::class, 'show']);
 
@@ -27,7 +27,7 @@ Route::get('/attendance/{id}', [AttendanceController::class, 'show']);
 
 Route::post('/attendance/{id}', [AttendanceController::class, 'update']);
 
-    Route::get(
+Route::get(
         '/stamp_correction_request/list',
         [ApplicationController::class, 'index']
     )->middleware(ApplicationListMiddleware::class);
@@ -75,6 +75,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get(
     '/admin/attendance/staff/{id}',
     [AdminStaffController::class, 'show']
+);
+
+    // スタッフ別月次勤怠一覧をCSV出力
+Route::get(
+    '/admin/attendance/staff/{id}/csv',
+    [AdminStaffController::class, 'csv']
 );
 
 });

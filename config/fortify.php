@@ -144,10 +144,11 @@ return [
     */
 
     'features' => [
-        Features::registration(),
-        
-            'confirm' => true,
-            'confirmPassword' => true,
-            // 'window' => 0,
-        ],
+    // 会員登録機能を有効にする
+    Features::registration(),
+
+    // メールアドレス認証機能を有効にする
+    Features::emailVerification(),
+
+],
     ];
