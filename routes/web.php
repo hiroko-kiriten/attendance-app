@@ -8,6 +8,7 @@ use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\AdminApplicationController;
 use App\Http\Controllers\AdminLoginController;
 use App\Http\Controllers\AdminStaffController;
+use App\Http\Controllers\ReportController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -22,6 +23,9 @@ Route::post('/attendance', [AttendanceController::class, 'store']);
 Route::get('/attendance/list', [AttendanceController::class, 'index']);
 
 Route::get('/attendance/detail/{id}', [AttendanceController::class, 'show']);
+
+// マイ勤怠レポート
+Route::get('/attendance/report',[ReportController::class, 'index'])->name('attendance.report');
 
 Route::get('/attendance/{id}', [AttendanceController::class, 'show']);
 

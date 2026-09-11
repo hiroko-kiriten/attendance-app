@@ -122,7 +122,7 @@ class AdminAttendanceController extends Controller
                 // 合計休憩時間に加算
                 $totalBreakTime += $breakMinutes;
 
-                // 新しい休憩を登録
+                // 1件ずつ新しい休憩を登録
                 $attendanceRecord->breaks()->create([
                     'break_in' => $breakIn,
                     'break_out' => $breakOut,
