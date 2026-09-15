@@ -28,4 +28,10 @@ class AttendanceRecord extends Model
     {
         return $this->hasMany(BreakRecord::class);
     }
+
+        // 修正申請とのリレーション
+    public function applications()
+    {
+        return $this->hasMany(AttendanceCorrectionRequest::class);
+    }
 }
