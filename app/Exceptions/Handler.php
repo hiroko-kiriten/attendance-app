@@ -15,6 +15,12 @@ use Illuminate\Http\Request;
 // HTTP例外を読み込む
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
+// バリデーション例外を読み込む
+use Illuminate\Validation\ValidationException;
+
+// 認証例外を読み込む
+use Illuminate\Auth\AuthenticationException;
+
 // 例外処理を担当するクラス
 class Handler extends ExceptionHandler
 {
@@ -38,15 +44,28 @@ class Handler extends ExceptionHandler
         $this->renderable(function (Throwable $e, Request $request) {
             // APIリクエストの場合だけJSONレスポンスを返す
             if ($request->is('api/*')) {
-                // HTTPステータスコードを取得する
-                $status = $e instanceof HttpExceptionInterface
-                    ? $e->getStatusCode()
-                    : 500;
+            // HTTPステータスコードを取得する
+            $status = $e instanceof ValidationException
+                ? 422
+                : ($e instanceof AuthenticationException
+                ? 401
+        : ($e instanceof HttpExceptionInterface
+                ? $e->getStatusCode()
+                : 500));
 
-                // エラーメッセージをJSONで返す
-                return response()->json([
-                    'message' => $e->getMessage(),
-                ], $status);
+                // バリデーションエラーの場合はerrorsも返す
+                if ($e instanceof ValidationException) {
+                    // バリデーションエラーをJSONで返す
+                    return response()->json([
+                        'message' => $e->getMessage(),
+                        'errors' => $e->errors(),
+                    ], 422);
+                }
+
+                    // その他のAPI例外をJSONで返す
+                    return response()->json([
+                        'message' => $e->getMessage(),
+                    ], $status);
             }
         });
 
