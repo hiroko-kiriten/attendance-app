@@ -348,9 +348,6 @@ class AttendanceRecordApiTest extends TestCase
             ]
         );
 
-        // 403の詳しいレスポンス内容を確認する
-        $response->dump();
-
         // 更新成功時は200 OKになることを確認する
         $response->assertStatus(200);
 
