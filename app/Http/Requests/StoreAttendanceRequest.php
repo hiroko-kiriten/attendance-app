@@ -6,22 +6,17 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreAttendanceRequest extends FormRequest
 {
-    /**
-     * Determine if the user is authorized to make this request.
-     */
+    // このリクエストを許可する
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * Get the validation rules that apply to the request.
-     *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
-     */
+    // バリデーションルールを定義する
     public function rules(): array
     {
         return [
+            // actionは4種類のいずれかを必須とする
             'action' => ['required', 'in:clock_in,clock_out,break_in,break_out'],
         ];
     }

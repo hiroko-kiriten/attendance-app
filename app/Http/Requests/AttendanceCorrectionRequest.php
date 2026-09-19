@@ -54,7 +54,7 @@ class AttendanceCorrectionRequest extends FormRequest
             ],
 
             'comment' => [
-                'nullable',
+                'required',
                 'string',
                 'max:255',
             ],

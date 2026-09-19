@@ -26,7 +26,7 @@ class AdminAttendanceRequest extends FormRequest
         'new_clock_out' => ['required', 'date_format:H:i:s', 'after:new_clock_in'],//退勤時間。必須、出勤時間より後。
         'new_break_in.*' => ['nullable', 'date_format:H:i:s', 'required_with:new_break_out.*'],
         'new_break_out.*' => ['nullable', 'date_format:H:i:s', 'required_with:new_break_in.*'],//休憩時間。複数あるので * を使っています。空欄も許可。
-        'comment' => ['nullable', 'string', 'max:255'],
+        'comment' => ['required', 'string', 'max:255'],
     ];
 }
 
