@@ -17,6 +17,7 @@ export default defineConfig({
                 'resources/css/user/user-login.css',
                 'resources/css/user/user-detail.css',
                 'resources/css/user/user-application-list.css',
+                'resources/css/auth/verify-email.css',
             ],
             refresh: true,
         }),
