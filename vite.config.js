@@ -13,6 +13,16 @@ export default defineConfig({
                 'resources/css/admin/admin-application-list.css',
                 // 管理者ログイン画面のCSS
                 'resources/css/admin/admin-login.css',
+               // 管理者勤怠一覧画面のCSS
+                'resources/css/admin/admin-attendance-list.css',
+               // 管理者勤怠詳細画面のCSS
+                'resources/css/admin/admin-detail.css',
+               // 管理者申請詳細画面のCSS
+                'resources/css/admin/admin-application-detail.css',
+               // スタッフ勤怠一覧画面のCSS
+                'resources/css/admin/staff-attendance-list.css',
+               // スタッフ一覧画面のCSS
+                'resources/css/admin/staff-list.css',
                 'resources/css/user/attendance-register.css',
                 'resources/css/user/user-attendance-list.css',
                 'resources/css/user/register.css',

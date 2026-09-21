@@ -40,5 +40,11 @@ class AttendanceCorrectionRequest extends Model
         return $this->hasMany(AttendanceCorrectionRequestBreak::class);
      } 
 
+
+     public function proposalBreaks()
+     {
+         // Bladeが使用する休憩情報の別名
+        return $this->hasMany(AttendanceCorrectionRequestBreak::class);
+     }
     }
 
