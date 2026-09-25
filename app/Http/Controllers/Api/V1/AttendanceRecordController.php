@@ -2,12 +2,15 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+// 基底Controllerを使用するため読み込む
 use App\Http\Controllers\Controller;
+// 勤怠一覧検索用のFormRequestを読み込む
 use App\Http\Requests\Api\V1\IndexAttendanceRecordRequest;
 // 勤怠登録用のFormRequestを読み込む
 use App\Http\Requests\Api\V1\StoreAttendanceRecordRequest;
 // 勤怠更新用のFormRequestを読み込む
 use App\Http\Requests\Api\V1\UpdateAttendanceRecordRequest;
+// 勤怠APIのResourceを読み込む
 use App\Http\Resources\Api\V1\AttendanceRecordResource;
 // 勤怠モデルを読み込む
 use App\Models\AttendanceRecord;

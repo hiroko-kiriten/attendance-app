@@ -62,7 +62,6 @@ class AttendanceRecordPolicy
     public function restore(User $user, AttendanceRecord $attendanceRecord): bool
     {
         // 今回のAPIでは勤怠の復元機能を使用しない
-        //
     }
 
     /**
@@ -71,6 +70,5 @@ class AttendanceRecordPolicy
     public function forceDelete(User $user, AttendanceRecord $attendanceRecord): bool
     {
         // 今回のAPIでは完全削除機能を使用しない
-        //
     }
 }

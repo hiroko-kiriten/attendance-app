@@ -6,7 +6,7 @@ namespace App\Http\Requests\Api\V1;
 // LaravelのFormRequestを読み込む
 use Illuminate\Foundation\Http\FormRequest;
 
-// 勤怠更新時のバリデーションを担当するRequest
+// 勤怠登録時のバリデーションを担当するRequest
 class StoreAttendanceRecordRequest extends FormRequest
 {
     /**

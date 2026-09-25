@@ -77,44 +77,44 @@ class ReportController extends Controller
             );
         }
 
-// 総労働時間を計算する
-$totalWorkMinutes = $attendanceRecords->sum(
-    fn ($record) => $record->report_work_minutes ?? 0
-);
+    // 総労働時間を計算する
+    $totalWorkMinutes = $attendanceRecords->sum(
+        fn ($record) => $record->report_work_minutes ?? 0
+    );
 
-// 勤怠日数を取得する
-$attendanceCount = $attendanceRecords->filter(
-    fn ($record) => isset($record->report_work_minutes)
-)->count();
+    // 勤怠日数を取得する
+    $attendanceCount = $attendanceRecords->filter(
+        fn ($record) => isset($record->report_work_minutes)
+    )->count();
 
-// 平均労働時間を計算する
-$avgWorkMinutes = $attendanceCount > 0
-    ? intdiv($totalWorkMinutes, $attendanceCount)
-    : 0;
+    // 平均労働時間を計算する
+    $avgWorkMinutes = $attendanceCount > 0
+        ? intdiv($totalWorkMinutes, $attendanceCount)
+        : 0;
 
-// 残業時間の合計を計算する
-$totalOvertimeMinutes = $attendanceRecords->sum(
-    function ($record) {
-        // 労働時間が8時間を超えた分を残業時間とする
-        $workMinutes = $record->report_work_minutes ?? 0;
+    // 残業時間の合計を計算する
+    $totalOvertimeMinutes = $attendanceRecords->sum(
+        function ($record) {
+    // 労働時間が8時間を超えた分を残業時間とする
+    $workMinutes = $record->report_work_minutes ?? 0;
 
-        return max($workMinutes - (8 * 60), 0);
+    return max($workMinutes - (8 * 60), 0);
     }
 );
 
-// 基本サマリーを作成する
-$summary = [
+    // 基本サマリーを作成する
+    $summary = [
     'total_work_minutes' => $totalWorkMinutes,
     'total_overtime_minutes' => $totalOvertimeMinutes,
     'avg_work_minutes' => $avgWorkMinutes,
-];
+    ];
 
-// 月次推移を作成する
-$monthlyTrend = [];
+    // 月次推移を作成する
+    $monthlyTrend = [];
 
-//6ヶ月分を順番に処理するための繰り返し(最初5、0以上は繰り返す、1ずつ減らす）
-//今月を含めて、過去6ヶ月を1ヶ月ずつ取り出して集計する
-for ($i = 5; $i >= 0; $i--) {
+    //6ヶ月分を順番に処理するための繰り返し(最初5、0以上は繰り返す、1ずつ減らす）
+    //今月を含めて、過去6ヶ月を1ヶ月ずつ取り出して集計する
+    for ($i = 5; $i >= 0; $i--) {
 
     // 対象月を取得する
     $month = $today->copy()->startOfMonth()->subMonths($i);//5か月前から0か月（今月）まで

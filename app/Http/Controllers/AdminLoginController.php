@@ -3,10 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\AdminLoginRequest;
+// Laravelの認証機能を使用するため読み込む
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
+// 管理者ログイン処理をまとめるController
 class AdminLoginController extends Controller
 {
     /**

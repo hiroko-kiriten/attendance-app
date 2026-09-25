@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+// DBトランザクションを使用するため読み込む
 use Illuminate\Support\Facades\DB;
 use App\Models\AttendanceCorrectionRequest;
+// リダイレクトレスポンスの型を使用するため読み込む
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 
