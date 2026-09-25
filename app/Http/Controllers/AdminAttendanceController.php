@@ -7,6 +7,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
 use App\Models\User;
 use App\Http\Requests\AdminAttendanceRequest;
+use App\Http\Requests\AttendanceCorrectionRequest;
 use App\Models\AttendanceRecord;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -50,8 +51,8 @@ class AdminAttendanceController extends Controller
     /**
  * 指定した勤怠記録の詳細を表示する
  *
- * @param int $id
- * @return View
+ * @param int $id //$id には整数（勤怠ID）が渡される
+ * @return View //このメソッドはViewを返す
  */
    public function show(int $id): View
 {    
@@ -73,56 +74,70 @@ class AdminAttendanceController extends Controller
     ));
 }
 
-    /**
- * 管理者が勤怠記録を修正する
- *
- * @param AdminAttendanceRequest $request
- * @param int $id
- * @return RedirectResponse
+/**
+ * 管理者用の勤怠更新処理
  */
- public function update(AdminAttendanceRequest $request, int $id): RedirectResponse
+public function update(AdminAttendanceRequest $request, int $id): RedirectResponse
+{
+    // 管理者用Requestで検証済みのデータを更新処理へ渡す
+    return $this->performUpdate($request, $id);
+}
+
+/**
+ * 共通の勤怠更新処理
+ */
+public function updateFromAttendanceRoute(
+    AttendanceCorrectionRequest $request,
+    int $id
+): RedirectResponse {
+
+    // 共通URLから来た管理者の更新処理を実行
+    return $this->performUpdate($request, $id);
+}
+
+/**
+ * 勤怠と休憩を更新する
+ */
+private function performUpdate(Request $request, int $id): RedirectResponse
 {
     // 修正対象の勤怠記録を取得
     $attendanceRecord = AttendanceRecord::findOrFail($id);
-    // 勤怠記録と休憩記録の更新をトランザクションで実行
+        // 勤怠記録と休憩記録をまとめて更新
     DB::transaction(function () use ($attendanceRecord, $request) {
-
-        // 出勤・退勤・備考を修正して勤怠記録を更新
+        // 出勤・退勤・備考を更新
         $attendanceRecord->update([
             'clock_in' => $request->new_clock_in,
             'clock_out' => $request->new_clock_out,
             'comment' => $request->comment,
         ]);
 
-        // 修正された休憩時間を取得
+        // 新しい休憩時間を取得
         $breakIns = $request->input('new_break_in', []);
         $breakOuts = $request->input('new_break_out', []);
 
-        // 既存の休憩をすべて削除
+        // 既存の休憩を削除
         $attendanceRecord->breaks()->delete();
 
-        // 休憩時間の合計を0分で初期化
+        // 合計休憩時間を初期化
         $totalBreakTime = 0;
 
         foreach ($breakIns as $index => $breakIn) {
-
             // 対応する休憩終了時間を取得
             $breakOut = $breakOuts[$index] ?? null;
 
-            // 休憩開始・終了の両方が入力されている場合
+            // 開始・終了の両方が入力されている場合
             if ($breakIn && $breakOut) {
-
                 // Carbonに変換
                 $breakStart = Carbon::parse($breakIn);
                 $breakEnd = Carbon::parse($breakOut);
 
-                // 1回分の休憩時間を分単位で計算
+                // 休憩時間を分単位で計算
                 $breakMinutes = $breakStart->diffInMinutes($breakEnd);
 
                 // 合計休憩時間に加算
                 $totalBreakTime += $breakMinutes;
 
-                // 1件ずつ新しい休憩を登録
+                // 休憩を登録
                 $attendanceRecord->breaks()->create([
                     'break_in' => $breakIn,
                     'break_out' => $breakOut,
@@ -137,19 +152,21 @@ class AdminAttendanceController extends Controller
                 ->format('H:i:s'),
         ]);
 
-        // 出勤・退勤時間が両方ある場合
+        // 出勤・退勤が両方ある場合
         if ($attendanceRecord->clock_in && $attendanceRecord->clock_out) {
-
+            // 出勤時間をCarbonに変換
             $clockIn = Carbon::parse($attendanceRecord->clock_in);
+
+            // 退勤時間をCarbonに変換
             $clockOut = Carbon::parse($attendanceRecord->clock_out);
 
-            // 出勤から退勤までの時間を分で計算
+            // 勤務時間を計算
             $totalTime = $clockIn->diffInMinutes($clockOut);
 
-            // 休憩時間を引く
+            // 休憩時間を差し引く
             $totalTime -= $totalBreakTime;
 
-            // TIME型に変換して勤務時間を保存
+            // 勤務時間を保存
             $attendanceRecord->update([
                 'total_time' => Carbon::createFromTime(0, 0, 0)
                     ->addMinutes($totalTime)
@@ -158,7 +175,7 @@ class AdminAttendanceController extends Controller
         }
     });
 
-    // 修正後の画面へ戻る
+    // 管理者用詳細画面へ戻る
     return redirect()->route('admin.attendance.detail', $id);
 }
 }

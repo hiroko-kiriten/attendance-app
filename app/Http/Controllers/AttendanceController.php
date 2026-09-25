@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\AdminAttendanceController;
 use App\Http\Requests\StoreAttendanceRequest;
 use App\Http\Requests\AttendanceCorrectionRequest;
 use App\Models\AttendanceCorrectionRequest as AttendanceCorrectionRequestModel;//FormRequestと同じ名前になるのを避けるため
@@ -242,8 +243,18 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
  * @param int $id
  * @return View
  */
-    public function show(int $id): View
-{
+    public function show(int $id): View|RedirectResponse
+    {
+    // 管理者の場合は管理者用の詳細処理を使う
+    if (auth()->user()->admin_status) {
+        return app(AdminAttendanceController::class)->show($id);
+    }
+
+    // 一般ユーザーは自分の勤怠だけ取得する
+    $attendanceRecord = AttendanceRecord::with('breaks')
+        ->where('user_id', auth()->id())
+        ->findOrFail($id);
+    // 指定したIDのデータを取得し、見つからなければ404エラー
     $attendanceRecord = AttendanceRecord::with('breaks')
         ->where('user_id', auth()->id())
         ->findOrFail($id);//指定したIDのデータを取得し、見つからなければ404エラーを発生させる
@@ -298,8 +309,17 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
  */
     public function update(AttendanceCorrectionRequest $request, int $id): RedirectResponse
     {
-        $attendanceRecord = AttendanceRecord::where('user_id', auth()->id())
-    ->findOrFail($id);
+
+     // 管理者は共通URLから管理者用の直接更新処理を使う
+    if (auth()->user()->admin_status) {
+
+    return app(AdminAttendanceController::class)
+        ->updateFromAttendanceRoute($request, $id);
+}
+
+    // 一般ユーザーは自分の勤怠を取得する
+    $attendanceRecord = AttendanceRecord::where('user_id', auth()->id())
+        ->findOrFail($id);
 
         $application = AttendanceCorrectionRequestModel::create([
             'attendance_record_id' => $attendanceRecord->id,
