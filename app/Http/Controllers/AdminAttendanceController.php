@@ -176,6 +176,6 @@ private function performUpdate(Request $request, int $id): RedirectResponse
     });
 
     // 管理者用詳細画面へ戻る
-    return redirect()->route('admin.attendance.detail', $id);
+    return redirect()->route('attendance.detail', $id);
 }
 }

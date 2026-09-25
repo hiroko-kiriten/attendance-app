@@ -22,12 +22,11 @@ Route::post('/attendance', [AttendanceController::class, 'store']);
 
 Route::get('/attendance/list', [AttendanceController::class, 'index']);
 
-Route::get('/attendance/detail/{id}', [AttendanceController::class, 'show']);
-
 // マイ勤怠レポート
 Route::get('/attendance/report',[ReportController::class, 'index'])->name('attendance.report');
 
-Route::get('/attendance/{id}', [AttendanceController::class, 'show']);
+Route::get('/attendance/{id}', [AttendanceController::class, 'show'])
+    ->name('attendance.detail');
 
 Route::post('/attendance/{id}', [AttendanceController::class, 'update']);
 
@@ -48,17 +47,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
 
     Route::get(
     '/admin/stamp_correction_request/list',
-    [AdminApplicationController::class, 'index']
-);
-
-    Route::get(
-        '/admin/attendance/{id}',
-        [AdminAttendanceController::class, 'show']
-    )->name('admin.attendance.detail');
-
-    Route::post(
-        '/admin/attendance/{id}',
-        [AdminAttendanceController::class, 'update']
+        [AdminApplicationController::class, 'index']
     );
 
     Route::get(
