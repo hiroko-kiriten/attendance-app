@@ -35,7 +35,7 @@ class AdminAttendanceUpdateTest extends TestCase
         ]);
 
         $response = $this->actingAs($admin)
-            ->post('/admin/attendance/' . $attendanceRecord->id, [
+            ->post('/attendance/' . $attendanceRecord->id, [
                 'new_clock_in' => '09:30:00',
                 'new_clock_out' => '18:30:00',
                 'new_break_in' => [
@@ -48,7 +48,7 @@ class AdminAttendanceUpdateTest extends TestCase
             ]);
 
         $response->assertRedirect(
-            route('admin.attendance.detail', $attendanceRecord->id)
+            route('attendance.detail', $attendanceRecord->id)
         );//Controllerにあるroute('admin.attendance.detail', $id);を確認
 
         $this->assertDatabaseHas('attendance_records', [

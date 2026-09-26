@@ -39,7 +39,7 @@ class AdminAttendanceDetailTest extends TestCase
         ]);
 
         $response = $this->actingAs($admin)
-            ->get('/admin/attendance/' . $attendanceRecord->id);
+            ->get('/attendance/' . $attendanceRecord->id);
 
         $response->assertStatus(200);
 

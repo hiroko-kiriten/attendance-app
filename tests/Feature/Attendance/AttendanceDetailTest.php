@@ -27,7 +27,7 @@ class AttendanceDetailTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)
-            ->get('/attendance/detail/' . $attendanceRecord->id);
+            ->get('/attendance/' . $attendanceRecord->id);
 
         $response->assertStatus(200);
 
