@@ -19,7 +19,6 @@ Laravelを使用して開発した勤怠管理アプリです。
 - Laravel Fortify
 - Laravel Sanctum
 - Blade
-- Tailwind CSS
 - Vite
 - PHPUnit
 
