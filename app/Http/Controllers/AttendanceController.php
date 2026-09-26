@@ -254,10 +254,6 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
     $attendanceRecord = AttendanceRecord::with('breaks')
         ->where('user_id', auth()->id())
         ->findOrFail($id);
-    // 指定したIDのデータを取得し、見つからなければ404エラー
-    $attendanceRecord = AttendanceRecord::with('breaks')
-        ->where('user_id', auth()->id())
-        ->findOrFail($id);//指定したIDのデータを取得し、見つからなければ404エラーを発生させる
 
     $user = $attendanceRecord->user;
 
