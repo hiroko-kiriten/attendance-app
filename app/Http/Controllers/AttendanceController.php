@@ -14,6 +14,7 @@ use Illuminate\View\View;
 
 class AttendanceController extends Controller
 {
+    // 勤怠に関する一般ユーザー向けの処理をまとめるコントローラー
 
 /**
  * 勤怠登録・出退勤・休憩の処理を行う
@@ -23,7 +24,9 @@ class AttendanceController extends Controller
  */
     public function store(StoreAttendanceRequest $request): RedirectResponse
 {
-    $user = auth()->user();//現在ログインしているユーザーの情報を取得して $user に代入
+    // 出勤・退勤・休憩の操作を受け取り、勤怠記録を更新する
+    // 現在ログインしているユーザーを取得
+        $user = auth()->user();//現在ログインしているユーザーの情報を取得して $user に代入
 
     $attendanceRecord = AttendanceRecord::where('user_id', $user->id)//ログインユーザーのIDと一致する勤怠記録を検索
         ->whereDate('date', now()->toDateString())//勤怠記録の日付が今日の日付と一致するものに絞り込む
@@ -49,8 +52,10 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
             ->whereNull('break_out')//休憩終了記録が未入力
             ->exists()//そのような記録が存在するか確認
     ) {//勤怠記録が存在し、出勤済みで、退勤前で、休憩中ではない場合に処理を実行
-        $clockOut = now();
-        $clockIn = Carbon::parse($attendanceRecord->clock_in);
+        // 退勤した時刻を現在時刻として取得
+            $clockOut = now();
+        // 出勤時刻を計算に使えるCarbon型へ変換
+            $clockIn = Carbon::parse($attendanceRecord->clock_in);
 
         // 出勤から退勤までの経過時間
         $workSeconds = $clockIn->diffInSeconds($clockOut);
@@ -80,6 +85,7 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
             $minutes = floor(($totalTimeSeconds % 3600) / 60);
             $seconds = $totalTimeSeconds % 60;
 
+            // 退勤時刻と実働時間を勤怠記録へ保存
             $attendanceRecord->update([
                 'clock_out' => $clockOut,
                 'total_time' => sprintf(
@@ -150,7 +156,7 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
 }
     }
 }
-    return redirect('/attendance/list');
+    return redirect('/attendance');
 }
 
 /**
@@ -160,6 +166,7 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
  */
     public function register(): View
 {
+    // 今日の勤怠状況を取得して勤怠登録画面を表示する
     $user = auth()->user();
 
      $attendanceRecord = AttendanceRecord::where('user_id', $user->id)
@@ -197,6 +204,7 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
  */
     public function index(Request $request): View
     {
+        // ログインユーザーの月別勤怠一覧を表示する
         // 表示する年月を取得
         $date = $request->date
             ? Carbon::parse($request->date)
@@ -245,6 +253,7 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
  */
     public function show(int $id): View|RedirectResponse
     {
+        // 指定された勤怠記録の詳細を表示する
     // 管理者の場合は管理者用の詳細処理を使う
     if (auth()->user()->admin_status) {
         return app(AdminAttendanceController::class)->show($id);
@@ -255,7 +264,8 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
         ->where('user_id', auth()->id())
         ->findOrFail($id);
 
-    $user = $attendanceRecord->user;
+    // 勤怠記録に紐づくユーザー情報を取得
+        $user = $attendanceRecord->user;
 
     $application = AttendanceCorrectionRequestModel::where(
         'attendance_record_id',
@@ -264,9 +274,11 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
     ->where('approval_status', '承認待ち')
     ->first();
 
-    $breaks = $attendanceRecord->breaks;
+    // 勤怠記録に紐づく休憩記録を取得
+        $breaks = $attendanceRecord->breaks;
 
-    $data = [
+    // Bladeで表示する勤怠詳細データを整形
+        $data = [
         'id' => $attendanceRecord->id,
         'year' => Carbon::parse($attendanceRecord->date)->format('Y年'),
         'date' => Carbon::parse($attendanceRecord->date)->format('n月j日'),
@@ -305,6 +317,7 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
  */
     public function update(AttendanceCorrectionRequest $request, int $id): RedirectResponse
     {
+        // 勤怠修正申請を登録し、管理者の場合は直接更新する
 
      // 管理者は共通URLから管理者用の直接更新処理を使う
     if (auth()->user()->admin_status) {
@@ -328,10 +341,14 @@ if ($request->action === 'clock_out') {//送信された操作が「退勤（clo
             'application_date' => now()->toDateString(),
         ]);
 
+        // 申請された休憩開始時刻の一覧を取得
         $breakIns = $request->input('new_break_in', []);
+        // 申請された休憩終了時刻の一覧を取得
         $breakOuts = $request->input('new_break_out', []);
 
+        // 申請された休憩を1件ずつ登録する
         foreach ($breakIns as $index => $breakIn) {
+            // 同じ番号の休憩終了時刻を取得し、なければnullにする
             $breakOut = $breakOuts[$index] ?? null;
 
             // 両方空欄なら登録しないで次の処理に進む

@@ -22,7 +22,7 @@ class AttendanceActionTest extends TestCase
                 'action' => 'clock_in',//実際の出勤処理を実行
             ]);
 
-        $response->assertRedirect('/attendance/list');
+        $response->assertRedirect('/attendance');
 
         $this->assertDatabaseHas('attendance_records', [
             'user_id' => $user->id,
@@ -81,7 +81,7 @@ class AttendanceActionTest extends TestCase
             'action' => 'break_in',
         ]);
 
-    $response->assertRedirect('/attendance/list');
+    $response->assertRedirect('/attendance');
 
     $this->assertDatabaseHas('breaks', [
         'break_in' => '12:00:00',
@@ -115,7 +115,7 @@ class AttendanceActionTest extends TestCase
             'action' => 'break_out',
         ]);
 
-    $response->assertRedirect('/attendance/list');
+    $response->assertRedirect('/attendance');
 
     $this->assertDatabaseHas('breaks', [
         'attendance_record_id' => $attendanceRecord->id,
@@ -155,7 +155,7 @@ class AttendanceActionTest extends TestCase
             'action' => 'clock_out',
         ]);
 
-    $response->assertRedirect('/attendance/list');
+    $response->assertRedirect('/attendance');
 
     $this->assertDatabaseHas('attendance_records', [
         'id' => $attendanceRecord->id,
